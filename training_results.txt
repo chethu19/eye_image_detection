@@ -1,0 +1,11 @@
+Test Accuracy: 97.47%
+
+Classification Report:
+              precision    recall  f1-score   support
+
+      Closed       0.99      0.96      0.97      8430
+        Open       0.96      0.99      0.98      8550
+
+    accuracy                           0.97     16980
+   macro avg       0.98      0.97      0.97     16980
+weighted avg       0.98      0.97      0.97     16980

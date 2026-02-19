@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eye State Classifier</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-hover: #7c3aed;
+            --secondary: #ec4899;
+            --bg-gradient: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-main: #f8fafc;
+            --text-muted: #cbd5e1;
+            --success: #22c55e;
+            --error: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        .container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 3rem;
+            width: 90%;
+            max-width: 480px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: slideIn 0.6s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #c4b5fd, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--glass-border);
+            border-radius: 16px;
+            padding: 3rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.02);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            border-color: var(--primary);
+            background: rgba(139, 92, 246, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+            transition: color 0.3s;
+        }
+
+        .upload-area:hover .upload-icon {
+            color: var(--primary);
+        }
+
+        .file-name {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 2rem;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        #result {
+            margin-top: 2.5rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--glass-border);
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .prediction-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .prediction-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .prediction-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .confidence-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+
+        .preview-image {
+            max-width: 150px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 2px solid var(--glass-border);
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .stats-panel {
+            margin-top: 2rem;
+            text-align: left;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 12px;
+            display: none;
+            /* Hidden by default for clean look, toggleable maybe? */
+        }
+
+        /* Utility classes for state colors */
+        .text-open {
+            color: #4ade80;
+            text-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+        }
+
+        .text-closed {
+            color: #f472b6;
+            text-shadow: 0 0 20px rgba(244, 114, 182, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Eye State AI</h1>
+        <p class="subtitle">Upload an eye image to detect if it's Open or Closed with high precision.</p>
+
+        <form id="uploadForm">
+            <label class="upload-area" id="dropZone" for="fileInput">
+                <div class="upload-icon">👁️</div>
+                <span id="fileName" class="file-name">Drop image here or click to browse</span>
+                <input type="file" id="fileInput" name="file" accept="image/*">
+            </label>
+            <button type="submit" class="btn" id="submitBtn">
+                <span class="btn-text">Analyze Image</span>
+                <div class="loading-spinner" id="spinner"></div>
+            </button>
+        </form>
+
+        <div id="result">
+            <div class="prediction-container">
+                <div>
+                    <img id="preview" class="preview-image" src="" alt="Eye Preview">
+                </div>
+                <div style="text-align: left;">
+                    <div class="prediction-label">Prediction</div>
+                    <div class="prediction-value" id="predictionText">--</div>
+                    <div class="confidence-badge" id="confidenceText">Confidence: --%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const uploadForm = document.getElementById('uploadForm');
+        const resultDiv = document.getElementById('result');
+        const predictionText = document.getElementById('predictionText');
+        const confidenceText = document.getElementById('confidenceText');
+        const previewImg = document.getElementById('preview');
+        const dropZone = document.getElementById('dropZone');
+        const submitBtn = document.getElementById('submitBtn');
+        const spinner = document.getElementById('spinner');
+        const btnText = document.querySelector('.btn-text');
+
+        // Drag and drop handlers
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            dropZone.classList.add('dragover');
+        }
+
+        function unhighlight(e) {
+            dropZone.classList.remove('dragover');
+        }
+
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            fileInput.files = files;
+            updateFileName(files[0]);
+        }
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                updateFileName(fileInput.files[0]);
+            }
+        });
+
+        function updateFileName(file) {
+            fileName.textContent = file ? file.name : "Drop image here or click to browse";
+
+            // Show preview immediately if possible
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    previewImg.src = e.target.result;
+                    resultDiv.style.display = 'block';
+                    predictionText.textContent = '--';
+                    confidenceText.textContent = 'Ready to analyze';
+                    confidenceText.style.background = 'rgba(255,255,255,0.1)';
+                    predictionText.className = 'prediction-value';
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (fileInput.files.length === 0) return;
+
+            setLoading(true);
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.error) {
+                    predictionText.textContent = "Error";
+                    confidenceText.textContent = data.error;
+                } else {
+                    predictionText.textContent = data.prediction;
+                    confidenceText.textContent = `Confidence: ${data.confidence}`;
+
+                    // Update classes for color coding
+                    predictionText.className = 'prediction-value ' +
+                        (data.prediction === 'Open' ? 'text-open' : 'text-closed');
+
+                    // Update image if server processed it differently (e.g. grayscale)
+                    // previewImg.src = 'data:image/png;base64,' + data.image_data; 
+                }
+            } catch (err) {
+                predictionText.textContent = "Error";
+                confidenceText.textContent = err.message;
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        function setLoading(isLoading) {
+            submitBtn.disabled = isLoading;
+            if (isLoading) {
+                spinner.style.display = 'inline-block';
+                btnText.style.display = 'none';
+            } else {
+                spinner.style.display = 'none';
+                btnText.style.display = 'inline';
+            }
+        }
+    </script>
+</body>
+
+</html>

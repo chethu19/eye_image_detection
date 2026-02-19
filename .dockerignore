@@ -1,0 +1,16 @@
+# Data
+eyes data/
+**/*.png
+
+# System/IDE
+__pycache__/
+*.pyc
+.git/
+.gitignore
+.DS_Store
+*.pkl
+!eye_state_model.pkl
+
+# Build
+Dockerfile
+requirements.txt
