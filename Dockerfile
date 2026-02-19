@@ -7,9 +7,12 @@ ENV PYTHONUNBUFFERED=1
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies if any (none strictly needed for basic flask/sklearn, but sometimes libgomp is needed for sklearn)
-# generic helpful ones:
-# RUN apt-get update && apt-get install -y libgomp1 && rm -rf /var/lib/apt/lists/*
+# Install system dependencies needed for scikit-learn and numpy
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first to leverage cache
 COPY requirements.txt .
