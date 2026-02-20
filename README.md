@@ -4,6 +4,7 @@ emoji: 👁️
 colorFrom: pink
 colorTo: gray
 sdk: docker
+app_port: 7860
 pinned: false
 license: mit
 ---
@@ -17,4 +18,4 @@ The model is currently trained with high accuracy. See `training_results.txt` fo
 
 ## Live Demo
 You can interact with the model via the Hugging Face Space:
-[Click here to open the Eye State Classifier](https://huggingface.co/spaces/jarvissssss/eye_image_detection)
+[Click here to open the Eye State Classifier](https://huggingface.co/spaces/chethu19/eye_image_detection)
