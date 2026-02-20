@@ -12,5 +12,4 @@ __pycache__/
 !eye_state_model.pkl
 
 # Build
-Dockerfile
-requirements.txt
+# Dockerfile and requirements.txt should NOT be ignored as they are needed for the build
